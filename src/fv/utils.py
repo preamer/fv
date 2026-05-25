@@ -1,0 +1,58 @@
+# From context.scm
+from typing import Any
+
+
+FLUENT_ENUM = {
+    "0": "First Order Upwind",
+    "1": "Second Order Upwind",
+    "2": "Power Law",
+    "3": "Central Difference",
+    "4": "Quick",
+    "5": "Modified HRIC",
+    "6": "Third-Order MUSCL",
+    "7": "Bounded Central Differencing",
+    "8": "CICSAM",
+    "9": "Low Diffusion Second Order",
+    "10": "Standard",
+    "11": "Linear",
+    "12": "Second Order",
+    "13": "Body Force Weighted",
+    "14": "PRESTO!",
+    "15": "Continuity Based",
+    "16": "Geo-Reconstruct",
+    "17": "Donor-Acceptor",
+    "18": "Modified Body Force Weighted",
+    "20": "SIMPLE",
+    "21": "SIMPLEC",
+    "22": "PISO",
+    "23": "Phase Coupled SIMPLE",
+    "24": "Coupled",
+    "25": "Fractional Step",
+    "28": "Compressive",
+    "29": "BGM",
+    "30": "Phase Coupled PISO",
+    "31": "Low Diffusion Central"
+}
+
+FLUENT_BOUNDARY_TYPES = {
+    2: "interior",
+    3: "wall",
+    4: "inlet-vent",
+    4: "pressure-inlet",
+    4: "intake-fan",
+    5: "pressure-outlet",
+    5: "outlet-vent",
+    5: "exhaust-fan",
+    7: "symmetry",
+    9: "pressure-far-field",
+    10: "velocity-inlet",
+    14: "radiator",
+    14: "fan",
+    14: "porous-jump",
+    20: "mass-flow-inlet",
+    20: "mass-flow-outlet",
+    24: "interface",
+    25: "overset",
+    36: "outflow",
+    37: "axis",
+}

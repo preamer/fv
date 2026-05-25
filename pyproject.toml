@@ -5,11 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fv"
 version = "0.1.0"
-description = "A cli tool to change the version of Ansys Fluent .h5 file"
+description = "A python CLI tool to handle Ansys Fluent .h5 file"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "h5py>=3.16.0",
+    "pyvista>=0.48.2",
+    "sexpdata>=1.0.2",
 ]
 
 [project.scripts]
