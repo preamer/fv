@@ -49,22 +49,9 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
     import re
     import h5py
 
-    if any(kwargs.values()):
-        need_solver = kwargs.get('solver')
-        need_materials = kwargs.get('materials')
-        need_boundary = kwargs.get('boundary')
-        need_ne = kwargs.get('ne')
-        need_disc_scheme = kwargs.get('disc')
-        need_ur_factor = kwargs.get('ur')
-        need_iter = kwargs.get('iter')
-    else:
-        need_solver = True
-        need_materials = True
-        need_boundary = True
-        need_ne = True
-        need_disc_scheme = True
-        need_ur_factor = True
-        need_iter = True
+    keys = ['solver', 'mat', 'boundary', 'ne', 'disc', 'ur', 'rd', 'iter']
+    has_args = any(kwargs.values())
+    config = {k: kwargs.get(k) if has_args else True for k in keys}
 
     with h5py.File(file_path, "r") as f:
         settings: h5py.Group = f['/settings']
@@ -75,7 +62,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
     data = {}
     data['version'] = version_info
 
-    if need_solver:
+    if config['solver']:
         case_config = re.search(
             r'^\(case-config.*',
             general_info,
@@ -134,7 +121,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
         else:
             data['solver']['gravity'] = "false"
 
-    if need_materials:
+    if config['mat']:
         import sexpdata
 
         data['materials'] = {}
@@ -155,15 +142,15 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
                 elif isinstance(m[1], list):
                     data['materials'][name][str(m[0])] = f'{m[1][0]}/{m[1][2]}'
 
-    if need_boundary:
+    if config['boundary']:
         import sexpdata
         from .boundary import BoundaryFactory
 
         data['boundary'] = {}
         boundaries: list[list] = sexpdata.parse(boundary_info, true=None)
         for boundary_info in boundaries:
-            id, type_, name, _ = [str(_) for _ in boundary_info[1]]
-            new_boundary = BoundaryFactory.create(name, id, type_)
+            id_, type_, name, _ = [str(_) for _ in boundary_info[1]]
+            new_boundary = BoundaryFactory.create(name, id_, type_)
             b_list = data['boundary'].get(type_, [])
 
             for property_ in boundary_info[2]:
@@ -177,7 +164,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
             b_list.append(new_boundary.__dict__)
             data['boundary'][type_] = b_list
 
-    if need_ne:
+    if config['ne']:
         import sexpdata
 
         data['ne'] = {}
@@ -194,7 +181,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
             }
             data['ne'][ne_dict['name']] = ne_dict
 
-    if need_disc_scheme:
+    if config['disc']:
         from .utils import FLUENT_ENUM
 
         data['disc-scheme'] = {}
@@ -208,7 +195,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
         for eq in ['flow', 'pressure', 'mom', 'temperature', 'k', 'omega', 'epsilon']:
             data['disc-scheme'][eq] = disc_scheme.get(eq)
 
-    if need_ur_factor:
+    if config['ur']:
         data['ur-factor'] = {}
         ur_factor = {
             ur[0]: ur[1]
@@ -220,7 +207,33 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
         for eq in ['flow', 'pressure', 'mom', 'temperature', 'k', 'omega', 'epsilon']:
             data['ur-factor'][eq] = ur_factor.get(eq, '')
 
-    if need_iter:
+    if config['rd']:
+        import sexpdata
+
+        data['report-definitions'] = {}
+        rds = re.search(
+            r'(\(monitor/report-definitions.*)',
+            general_info,
+            re.M
+        ).group(1)
+        rds: list = sexpdata.loads(rds, true=None)[1]
+        for rd in rds:
+            name = str(rd[0][2])
+            type_ = str(rd[1][1])
+            data['report-definitions'][name] = {'type': type_}
+            if 'volume' in type_:
+                data['report-definitions'][name]['field'] = str(rd[1][2][2])
+                data['report-definitions'][name]['zones'] = [str(zone) for zone in rd[1][6][1:]]
+                data['report-definitions'][name]['per-zone?'] = str(rd[1][-5][2])
+            elif 'surface' in type_:
+                data['report-definitions'][name]['field'] = str(rd[1][2][2])
+                data['report-definitions'][name]['surfaces'] = [str(surface) for surface in rd[1][5][1:]]
+                data['report-definitions'][name]['per-surface?'] = str(rd[1][-5][2])
+            elif 'flux' in type_:
+                data['report-definitions'][name]['zones'] = [str(zone) for zone in rd[1][3][1:]]
+                data['report-definitions'][name]['per-zone?'] = str(rd[1][-5][2])
+
+    if config['iter']:
         data['iter'] = {}
         if data['solver']['time'] == 'steady':
             data['iter']['iterations'] = re.search(
@@ -332,6 +345,11 @@ def main():
         help="show ur-factor settings"
     )
     parser.add_argument(
+        "--rd", "--report-definations",
+        action="store_true",
+        help="show report-definations settings"
+    )
+    parser.add_argument(
         "--iter",
         action="store_true",
         help="show iteration settings"
@@ -364,11 +382,12 @@ def main():
             from rich import print
             kwargs = {
                 'solver': args.solver,
-                'materials': args.mat,
+                'mat': args.mat,
                 'boundary': args.boundary,
                 'ne': args.ne,
                 'disc': args.disc,
                 'ur': args.ur,
+                'rd': args.rd,
                 'iter': args.iter
             }
             print(read_case(args.file_path, **kwargs))
