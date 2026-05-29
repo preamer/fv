@@ -49,20 +49,14 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
     import re
     import h5py
 
-    keys = ['solver', 'mat', 'boundary', 'ne', 'disc', 'ur', 'rd', 'iter']
-    has_args = any(kwargs.values())
-    config = {k: kwargs.get(k) if has_args else True for k in keys}
-
     with h5py.File(file_path, "r") as f:
         settings: h5py.Group = f['/settings']
-        version_info = settings['Origin'][0].decode()
         general_info = settings['Rampant Variables'][0].decode()
         boundary_info = settings['Thread Variables'][0].decode()
 
     data = {}
-    data['version'] = version_info
 
-    if config['solver']:
+    if kwargs['solver']:
         case_config = re.search(
             r'^\(case-config.*',
             general_info,
@@ -121,7 +115,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
         else:
             data['solver']['gravity'] = "false"
 
-    if config['mat']:
+    if kwargs['mat']:
         import sexpdata
 
         data['materials'] = {}
@@ -142,7 +136,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
                 elif isinstance(m[1], list):
                     data['materials'][name][str(m[0])] = f'{m[1][0]}/{m[1][2]}'
 
-    if config['boundary']:
+    if kwargs['boundary']:
         import sexpdata
         from .boundary import BoundaryFactory
 
@@ -164,7 +158,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
             b_list.append(new_boundary.__dict__)
             data['boundary'][type_] = b_list
 
-    if config['ne']:
+    if kwargs['ne']:
         import sexpdata
 
         data['ne'] = {}
@@ -181,7 +175,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
             }
             data['ne'][ne_dict['name']] = ne_dict
 
-    if config['disc']:
+    if kwargs['disc']:
         from .utils import FLUENT_ENUM
 
         data['disc-scheme'] = {}
@@ -195,7 +189,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
         for eq in ['flow', 'pressure', 'mom', 'temperature', 'k', 'omega', 'epsilon']:
             data['disc-scheme'][eq] = disc_scheme.get(eq)
 
-    if config['ur']:
+    if kwargs['ur']:
         data['ur-factor'] = {}
         ur_factor = {
             ur[0]: ur[1]
@@ -207,7 +201,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
         for eq in ['flow', 'pressure', 'mom', 'temperature', 'k', 'omega', 'epsilon']:
             data['ur-factor'][eq] = ur_factor.get(eq, '')
 
-    if config['rd']:
+    if kwargs['rd']:
         import sexpdata
 
         data['report-definitions'] = {}
@@ -233,7 +227,7 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
                 data['report-definitions'][name]['zones'] = [str(zone) for zone in rd[1][3][1:]]
                 data['report-definitions'][name]['per-zone?'] = str(rd[1][-5][2])
 
-    if config['iter']:
+    if kwargs['iter']:
         data['iter'] = {}
         if data['solver']['time'] == 'steady':
             data['iter']['iterations'] = re.search(
