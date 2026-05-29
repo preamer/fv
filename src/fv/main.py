@@ -227,6 +227,25 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
                 data['report-definitions'][name]['zones'] = [str(zone) for zone in rd[1][3][1:]]
                 data['report-definitions'][name]['per-zone?'] = str(rd[1][-5][2])
 
+    if kwargs['plotsets']:
+        import sexpdata
+
+        data['plotsets'] = {}
+        plotsets = re.search(
+            r'(\(monitor/plotsets.*)',
+            general_info,
+            re.M
+        ).group(1)
+        plotsets: list = sexpdata.loads(plotsets, true=None)[1]
+        for plotset in plotsets:
+            plotset_dict = {
+                str(property_[0]): str(property_[2])
+                for property_ in plotset
+                if str(property_[0]) not in ['old-props', 'report-defs']
+            }
+            plotset_dict['report-defs'] = str(plotset[6][1])
+            data['plotsets'][plotset_dict['name']] = plotset_dict
+
     if kwargs['iter']:
         data['iter'] = {}
         if data['solver']['time'] == 'steady':
@@ -344,6 +363,11 @@ def main():
         help="show report-definations settings"
     )
     parser.add_argument(
+        "--plotsets",
+        action="store_true",
+        help="show report-definations plotsets settings"
+    )
+    parser.add_argument(
         "--iter",
         action="store_true",
         help="show iteration settings"
@@ -382,6 +406,7 @@ def main():
                 'disc': args.disc,
                 'ur': args.ur,
                 'rd': args.rd,
+                'plotsets': args.plotsets,
                 'iter': args.iter
             }
             print(read_case(args.file_path, **kwargs))
