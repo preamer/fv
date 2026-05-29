@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "h5py>=3.16.0",
-    "pyvista>=0.48.2",
+    "pyvista>=0.48.4",
     "sexpdata>=1.0.2",
 ]
 
