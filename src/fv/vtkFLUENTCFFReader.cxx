@@ -1,7 +1,8 @@
 // A modified version of the original vtkFLUENTCFFReader.cxx
 
 #include "vtkFLUENTCFFReader.h"
-
+#include "pybind11/pybind11.h"
+#include "pybind11/numpy.h"
 #include <hdf5.h>
 
 #include <iostream>
@@ -11,15 +12,34 @@
   throw std::runtime_error("HDF5 error in vtkFLUENTCFFReader: " + std::string(__func__) + " at " + \
     std::to_string(__LINE__))
 
+
+namespace py = pybind11;
+
+namespace {
+    int FluentCellTypeToVtk(int type)
+    {
+        switch (type)
+        {
+        case 1: return 5;   // triangle
+        case 2: return 10;  // tetra
+        case 3: return 9;   // quad
+        case 4: return 12;  // hexahedron
+        case 5: return 14;  // pyramid
+        case 6: return 13;  // wedge
+        default: return 42; // polyhedron
+        }
+    }
+}
+
 //------------------------------------------------------------------------------
-struct vtkFLUENTCFFReader::MeshInternals
+struct vtkFLUENTCFFReader::vtkInternals
 {
     hid_t FluentCaseFile;
     hid_t FluentDataFile;
 };
 
 //------------------------------------------------------------------------------
-vtkFLUENTCFFReader::vtkFLUENTCFFReader() : HDFImpl(new vtkFLUENTCFFReader::MeshInternals)
+vtkFLUENTCFFReader::vtkFLUENTCFFReader() : HDFImpl(new vtkFLUENTCFFReader::vtkInternals)
 {
     this->HDFImpl->FluentCaseFile = -1;
     this->HDFImpl->FluentDataFile = -1;
@@ -28,6 +48,71 @@ vtkFLUENTCFFReader::vtkFLUENTCFFReader() : HDFImpl(new vtkFLUENTCFFReader::MeshI
 
 //------------------------------------------------------------------------------
 vtkFLUENTCFFReader::~vtkFLUENTCFFReader() = default;
+
+py::dict vtkFLUENTCFFReader::ReadMeshData(const std::string& filename)
+{
+    if (!this->OpenCaseFile(filename))
+        throw std::runtime_error("failed to open case file");
+
+    this->FileName = filename;
+    if (this->ParseCaseFile() == 0)
+        throw std::runtime_error("failed to parse case file");
+
+    this->CleanCells();
+    this->PopulateCellNodes();
+    this->GetNumberOfCellZones();
+
+    std::vector<int> connectivity;
+    std::vector<int> cell_types;
+    std::vector<int> cell_zones;
+
+    for (const auto& cell : this->Cells)
+    {
+        connectivity.push_back(static_cast<int>(cell.nodes.size()));
+        connectivity.insert(connectivity.end(), cell.nodes.begin(), cell.nodes.end());
+        cell_types.push_back(FluentCellTypeToVtk(cell.type));
+        cell_zones.push_back(cell.zone);
+    }
+
+    auto points_shape = py::ssize_t(this->Points.size() / 3);
+    py::array_t<double> points(std::vector<ssize_t>{ static_cast<ssize_t>(points_shape), 3 });
+    auto points_mut = points.mutable_unchecked<2>();
+    for (std::size_t i = 0; i < this->Points.size() / 3; ++i)
+    {
+        points_mut(i, 0) = this->Points[3 * i + 0];
+        points_mut(i, 1) = this->Points[3 * i + 1];
+        points_mut(i, 2) = this->Points[3 * i + 2];
+    }
+
+    py::array_t<int> cells(connectivity.size());
+    auto cells_mut = cells.mutable_unchecked<1>();
+    for (std::size_t i = 0; i < connectivity.size(); ++i)
+        cells_mut(i) = connectivity[i];
+
+    py::array_t<int> types(cell_types.size());
+    auto types_mut = types.mutable_unchecked<1>();
+    for (std::size_t i = 0; i < cell_types.size(); ++i)
+        types_mut(i) = cell_types[i];
+
+    py::array_t<int> zones(cell_zones.size());
+    auto zones_mut = zones.mutable_unchecked<1>();
+    for (std::size_t i = 0; i < cell_zones.size(); ++i)
+        zones_mut(i) = cell_zones[i];
+
+    py::dict result;
+    result["points"] = points;
+    result["cells"] = cells;
+    result["cell_types"] = types;
+    result["cell_zones"] = zones;
+    return result;
+}
+
+py::object vtkFLUENTCFFReader::ReadPyVistaMesh(const std::string& filename)
+{
+    auto data = this->ReadMeshData(filename);
+    py::module_ pyvista = py::module_::import("pyvista");
+    return pyvista.attr("UnstructuredGrid")(data["cells"], data["cell_types"], data["points"]);
+}
 
 //------------------------------------------------------------------------------
 bool vtkFLUENTCFFReader::OpenCaseFile(const std::string& filename)
@@ -1139,7 +1224,6 @@ void vtkFLUENTCFFReader::GetInterfaceFaceParents()
         CHECK_HDF(H5Gclose(group));
     }
 }
-
 
 //------------------------------------------------------------------------------
 void vtkFLUENTCFFReader::CleanCells()

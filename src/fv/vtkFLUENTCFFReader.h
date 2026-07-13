@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <pybind11/pybind11.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -11,6 +12,9 @@ class vtkFLUENTCFFReader
 public:
     vtkFLUENTCFFReader();
     ~vtkFLUENTCFFReader();
+
+    pybind11::dict ReadMeshData(const std::string& filename);
+    pybind11::object ReadPyVistaMesh(const std::string& filename);
 
     struct Cell
     {
@@ -39,7 +43,6 @@ public:
         int ncgParent;
         int ncgChild;
     };
-
 
     /**
      * Enumerate
@@ -175,8 +178,8 @@ public:
     std::string FileName;
     bool RenameArrays = false;
 
-    struct MeshInternals;
-    std::unique_ptr<MeshInternals> HDFImpl;
+    struct vtkInternals;
+    std::unique_ptr<vtkInternals> HDFImpl;
 
     std::vector<double> Points;
     // vtkNew<vtkTriangle> Triangle;

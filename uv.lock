@@ -297,7 +297,9 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "h5py" },
+    { name = "pybind11" },
     { name = "pyvista" },
+    { name = "setuptools" },
     { name = "sexpdata" },
     { name = "tqdm" },
 ]
@@ -305,7 +307,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "h5py", specifier = ">=3.16.0" },
+    { name = "pybind11", specifier = ">=3.0.4" },
     { name = "pyvista", specifier = ">=0.48.4" },
+    { name = "setuptools", specifier = ">=83.0.0" },
     { name = "sexpdata", specifier = ">=1.0.2" },
     { name = "tqdm", specifier = ">=4.68.3" },
 ]
@@ -760,6 +764,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pybind11"
+version = "3.0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/f0/35145a3c3baffeef55d4b8324caa33abaa8fa56ab345ecd4b2211d09163e/pybind11-3.0.4.tar.gz", hash = "sha256:3286b59c8a774b9ee650169302dd5a4eedc30a8617905a0560dd8ee44775130c", size = 589533, upload-time = "2026-04-19T03:08:15.925Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/06/c3a23c9a0263b136c519f033a58d4641e73065fefc7754e9667ec206d992/pybind11-3.0.4-py3-none-any.whl", hash = "sha256:961720ee652da51d531b7b2451a6bd2bc042b0106e6d9baa48ecb7d58034ce63", size = 314166, upload-time = "2026-04-19T03:08:14.091Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.20.0"
 source = { registry = "https://pypi.org/simple" }
@@ -856,6 +869,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5b/06/9a8600207fd72a29ee965e9a4c61b750cc3fa106768f14a7b3ee3e36cb61/scooby-0.11.2.tar.gz", hash = "sha256:0575c73636ec4c2587bea1f8a038798ddcb249e02067fae897dac3bf4f4e444d", size = 242928, upload-time = "2026-04-22T23:13:12.307Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/99/bc/1173f502f1870e3bae81c148326c5cbcc19ec77df79a9aaf17a59911355c/scooby-0.11.2-py3-none-any.whl", hash = "sha256:f34c36bbee749b2c55816a080521f216d88304e635017e911c12249607d38c49", size = 20142, upload-time = "2026-04-22T23:13:10.705Z" },
+]
+
+[[package]]
+name = "setuptools"
+version = "83.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/26/f5d29e25ffdb535afef2d35cdb55b325298f96debd670da4c325e08d70f4/setuptools-83.0.0.tar.gz", hash = "sha256:025bccbbf0fa05b6192bc64ae1e7b16e001fd6d6d4d5de03c97b1c1ade523bef", size = 1154254, upload-time = "2026-07-04T15:31:22.699Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5d/40/e1e72872c6354b306daef1703549e8e83b4d43cfea356311bf722a043752/setuptools-83.0.0-py3-none-any.whl", hash = "sha256:29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3", size = 1008090, upload-time = "2026-07-04T15:31:20.885Z" },
 ]
 
 [[package]]
