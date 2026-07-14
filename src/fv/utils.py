@@ -1,7 +1,4 @@
 # From context.scm
-from typing import Any
-
-
 FLUENT_ENUM = {
     "0": "First Order Upwind",
     "1": "Second Order Upwind",
@@ -31,7 +28,7 @@ FLUENT_ENUM = {
     "28": "Compressive",
     "29": "BGM",
     "30": "Phase Coupled PISO",
-    "31": "Low Diffusion Central"
+    "31": "Low Diffusion Central",
 }
 
 FLUENT_BOUNDARY_TYPES = {
@@ -55,4 +52,14 @@ FLUENT_BOUNDARY_TYPES = {
     25: "overset",
     36: "outflow",
     37: "axis",
+}
+
+CELL_TYPES = {
+    1: "Triangle",
+    2: "Tetrahedron",
+    3: "Quadrilateral",
+    4: "Hexahedral",
+    5: "Pyramid",
+    6: "Wedge",
+    7: "Polyhedron",
 }

@@ -71,7 +71,7 @@ public:
     /**
      * Reads necessary information from the .cas file
      */
-    virtual int ParseCaseFile();
+    virtual void ParseCaseFile();
 
     /**
      * Get the dimension of the file (2D/3D)
@@ -158,7 +158,7 @@ public:
       //  Variables
       //
     std::string FileName;
-    bool RenameArrays = false;
+    std::string FileType;
 
     struct vtkInternals;
     std::unique_ptr<vtkInternals> HDFImpl;

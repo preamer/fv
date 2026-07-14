@@ -7,10 +7,13 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 define_macros = []
 extra_compile_args = []
+extra_link_args = []
 
 if sys.platform == "win32":
     define_macros.append(("H5_BUILT_AS_DYNAMIC_LIB", None))
     extra_compile_args.extend(["/utf-8", "/EHsc", "/bigobj"])
+elif sys.platform == "linux":
+    extra_link_args = ["-Wl,-rpath,$ORIGIN/../../lib"]
 
 ext_modules = [
     Pybind11Extension(
@@ -21,6 +24,7 @@ ext_modules = [
         libraries=["hdf5"],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
     ),
 ]
 

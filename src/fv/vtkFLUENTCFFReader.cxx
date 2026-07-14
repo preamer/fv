@@ -55,9 +55,7 @@ py::dict vtkFLUENTCFFReader::ReadMeshData(const std::string& filename)
         throw std::runtime_error("failed to open case file");
 
     this->FileName = filename;
-    if (this->ParseCaseFile() == 0)
-        throw std::runtime_error("failed to parse case file");
-
+    this->ParseCaseFile();
     this->CleanCells();
     this->PopulateCellNodes();
     this->GetNumberOfCellZones();
@@ -131,6 +129,18 @@ bool vtkFLUENTCFFReader::OpenCaseFile(const std::string& filename)
         std::cerr << "The file " << filename << " does not exist or is not a HDF5 file.";
         return false;
     }
+
+    // determine the file type based on the extension
+    size_t lastDot = filename.rfind('.');
+    if (lastDot == std::string::npos || lastDot == 0) {
+        return false;
+    }
+    size_t secondLastDot = filename.rfind('.', lastDot - 1);
+    if (secondLastDot == std::string::npos) {
+        return false;
+    }
+    this->FileType = filename.substr(secondLastDot + 1, lastDot - secondLastDot - 1);
+
     // Open file with default properties access
     this->HDFImpl->FluentCaseFile = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     // Check if file is CFF Format like
@@ -203,31 +213,22 @@ void vtkFLUENTCFFReader::GetNumberOfCellZones()
 }
 
 //------------------------------------------------------------------------------
-int vtkFLUENTCFFReader::ParseCaseFile()
+void vtkFLUENTCFFReader::ParseCaseFile()
 {
-    try
-    {
-        this->GetNodesGlobal();
-        this->GetCellsGlobal();
-        this->GetFacesGlobal();
-        // .cas is always DP
-        // .dat is DP or SP
-        this->GetNodes();
-        this->GetCells();
-        this->GetFaces();
+    this->GetNodesGlobal();
+    this->GetCellsGlobal();
+    this->GetFacesGlobal();
+    // .cas is always DP
+    // .dat is DP or SP
+    this->GetNodes();
+    this->GetCells();
+    this->GetFaces();
 
-        this->GetCellTree();
-        // this->GetCellOverset();
-        this->GetFaceTree();
-        this->GetInterfaceFaceParents();
-        // this->GetNonconformalGridInterfaceFaceInformation();
-    }
-    catch (std::runtime_error const& e)
-    {
-        std::cerr << e.what();
-        return 0;
-    }
-    return 1;
+    this->GetCellTree();
+    // this->GetCellOverset();
+    this->GetFaceTree();
+    this->GetInterfaceFaceParents();
+    // this->GetNonconformalGridInterfaceFaceInformation();
 }
 
 //------------------------------------------------------------------------------
@@ -356,7 +357,15 @@ void vtkFLUENTCFFReader::GetNodes()
         {
             throw std::runtime_error("Unable to open HDF group (GetNodes coords).");
         }
-        dset_coords = H5Dopen(group_coords, std::to_string(Id[iZone]).c_str(), H5P_DEFAULT);
+        if (this->FileType == "cas")
+        {
+            dset_coords = H5Dopen(group_coords, std::to_string(Id[iZone]).c_str(), H5P_DEFAULT);
+        }
+        else if (this->FileType == "msh")
+        {
+            dset_coords = H5Dopen(group_coords, std::to_string(iZone + 1).c_str(), H5P_DEFAULT);
+        }
+
         if (dset_coords < 0)
         {
             throw std::runtime_error("Unable to open HDF group (GetNodes coords).");
@@ -398,7 +407,7 @@ void vtkFLUENTCFFReader::GetNodes()
 
         unsigned int requiredSize = lastIndex * 3;
         if (this->Points.size() < requiredSize) {
-            this->Points.resize(requiredSize, 0.0); // 缺失的坐标默认用 0.0 填补
+            this->Points.resize(requiredSize, 0.0);
         }
 
         if (this->GridDimension == 3)
@@ -758,15 +767,17 @@ void vtkFLUENTCFFReader::GetFaces()
     CHECK_HDF(H5Dread(dset, H5T_NATIVE_INT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, shadowZoneId.data()));
     CHECK_HDF(H5Dclose(dset));
 
-    std::vector<int32_t> flags(nZones);
-    dset = H5Dopen(group, "flags", H5P_DEFAULT);
-    if (dset < 0)
+    if (this->FileType == "cas")
     {
-        throw std::runtime_error("Unable to open HDF dataset (GetFaces).");
+        std::vector<int32_t> flags(nZones);
+        dset = H5Dopen(group, "flags", H5P_DEFAULT);
+        if (dset < 0)
+        {
+            throw std::runtime_error("Unable to open HDF dataset (GetFaces).");
+        }
+        CHECK_HDF(H5Dread(dset, H5T_NATIVE_INT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, flags.data()));
+        CHECK_HDF(H5Dclose(dset));
     }
-    CHECK_HDF(H5Dread(dset, H5T_NATIVE_INT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, flags.data()));
-    CHECK_HDF(H5Dclose(dset));
-
     for (uint64_t iZone = 0; iZone < nZones; iZone++)
     {
         unsigned int zoneId = static_cast<unsigned int>(Id[iZone]);
@@ -882,114 +893,230 @@ void vtkFLUENTCFFReader::GetFaces()
     }
 
     // C0 C1
-    group = H5Gopen(this->HDFImpl->FluentCaseFile, "/meshes/1/faces/c0", H5P_DEFAULT);
-    if (group < 0)
+    // C0 C1 are different in msh and cas files, so we need to swap them in the reader
+    // TODO: fix c0 c1 parse in msh files
+    if (this->FileType == "cas")
     {
-        throw std::runtime_error("Unable to open HDF group (GetFaces c0).");
-    }
-    attr = H5Aopen(group, "nSections", H5P_DEFAULT);
-    if (attr < 0)
-    {
-        throw std::runtime_error("Unable to open HDF attribute (GetFaces c0).");
-    }
-    CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &nSections));
-    CHECK_HDF(H5Aclose(attr));
-    for (uint64_t iSection = 0; iSection < nSections; iSection++)
-    {
-        uint64_t minc0, maxc0;
-
-        dset = H5Dopen(group, std::to_string(iSection + 1).c_str(), H5P_DEFAULT);
-        if (dset < 0)
+        group = H5Gopen(this->HDFImpl->FluentCaseFile, "/meshes/1/faces/c0", H5P_DEFAULT);
+        if (group < 0)
         {
-            throw std::runtime_error("Unable to open HDF dataset (GetFaces c0 iSection).");
+            throw std::runtime_error("Unable to open HDF group (GetFaces c0).");
         }
-        attr = H5Aopen(dset, "minId", H5P_DEFAULT);
+        attr = H5Aopen(group, "nSections", H5P_DEFAULT);
         if (attr < 0)
         {
-            throw std::runtime_error("Unable to open HDF attribute (GetFaces c0 iSection).");
+            throw std::runtime_error("Unable to open HDF attribute (GetFaces c0).");
         }
-        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &minc0));
+        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &nSections));
         CHECK_HDF(H5Aclose(attr));
-        attr = H5Aopen(dset, "maxId", H5P_DEFAULT);
-        if (attr < 0)
+        for (uint64_t iSection = 0; iSection < nSections; iSection++)
         {
-            throw std::runtime_error("Unable to open HDF attribute (GetFaces c0 iSection).");
-        }
-        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &maxc0));
-        CHECK_HDF(H5Aclose(attr));
+            uint64_t minc0, maxc0;
 
-        std::vector<uint32_t> c0(maxc0 - minc0 + 1);
-        CHECK_HDF(H5Dread(dset, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, c0.data()));
-        CHECK_HDF(H5Dclose(dset));
-
-        for (unsigned int i = static_cast<unsigned int>(minc0); i <= static_cast<unsigned int>(maxc0);
-            i++)
-        {
-            this->Faces[i - 1].c0 = static_cast<int>(c0[i - minc0]) - 1;
-            if (this->Faces[i - 1].c0 >= 0)
+            dset = H5Dopen(group, std::to_string(iSection + 1).c_str(), H5P_DEFAULT);
+            if (dset < 0)
             {
-                this->Cells[this->Faces[i - 1].c0].faces.push_back(i - 1);
+                throw std::runtime_error("Unable to open HDF dataset (GetFaces c0 iSection).");
+            }
+            attr = H5Aopen(dset, "minId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c0 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &minc0));
+            CHECK_HDF(H5Aclose(attr));
+            attr = H5Aopen(dset, "maxId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c0 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &maxc0));
+            CHECK_HDF(H5Aclose(attr));
+
+            std::vector<uint32_t> c0(maxc0 - minc0 + 1);
+            CHECK_HDF(H5Dread(dset, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, c0.data()));
+            CHECK_HDF(H5Dclose(dset));
+
+            for (unsigned int i = static_cast<unsigned int>(minc0); i <= static_cast<unsigned int>(maxc0);
+                i++)
+            {
+                this->Faces[i - 1].c0 = static_cast<int>(c0[i - minc0]) - 1;
+                if (this->Faces[i - 1].c0 >= 0)
+                {
+                    this->Cells[this->Faces[i - 1].c0].faces.push_back(i - 1);
+                }
             }
         }
-    }
-    CHECK_HDF(H5Gclose(group));
+        CHECK_HDF(H5Gclose(group));
 
-    group = H5Gopen(this->HDFImpl->FluentCaseFile, "/meshes/1/faces/c1", H5P_DEFAULT);
-    if (group < 0)
-    {
-        throw std::runtime_error("Unable to open HDF group (GetFaces c1).");
-    }
-    attr = H5Aopen(group, "nSections", H5P_DEFAULT);
-    if (attr < 0)
-    {
-        throw std::runtime_error("Unable to open HDF attribute (GetFaces c1).");
-    }
-    CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &nSections));
-    CHECK_HDF(H5Aclose(attr));
-    for (std::size_t i = 0; i < this->Faces.size(); i++)
-    {
-        this->Faces[i].c1 = -1;
-    }
-    for (uint64_t iSection = 0; iSection < nSections; iSection++)
-    {
-        uint64_t minc1, maxc1;
-
-        dset = H5Dopen(group, std::to_string(iSection + 1).c_str(), H5P_DEFAULT);
-        if (dset < 0)
+        group = H5Gopen(this->HDFImpl->FluentCaseFile, "/meshes/1/faces/c1", H5P_DEFAULT);
+        if (group < 0)
         {
-            throw std::runtime_error("Unable to open HDF dataset (GetFaces c1 iSection).");
+            throw std::runtime_error("Unable to open HDF group (GetFaces c1).");
         }
-        attr = H5Aopen(dset, "minId", H5P_DEFAULT);
+        attr = H5Aopen(group, "nSections", H5P_DEFAULT);
         if (attr < 0)
         {
-            throw std::runtime_error("Unable to open HDF attribute (GetFaces c1 iSection).");
+            throw std::runtime_error("Unable to open HDF attribute (GetFaces c1).");
         }
-        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &minc1));
+        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &nSections));
         CHECK_HDF(H5Aclose(attr));
-        attr = H5Aopen(dset, "maxId", H5P_DEFAULT);
-        if (attr < 0)
+        for (std::size_t i = 0; i < this->Faces.size(); i++)
         {
-            throw std::runtime_error("Unable to open HDF attribute (GetFaces c1 iSection).");
+            this->Faces[i].c1 = -1;
         }
-        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &maxc1));
-        CHECK_HDF(H5Aclose(attr));
-
-        std::vector<uint32_t> c1(maxc1 - minc1 + 1);
-        CHECK_HDF(H5Dread(dset, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, c1.data()));
-        CHECK_HDF(H5Dclose(dset));
-
-        for (unsigned int i = static_cast<unsigned int>(minc1); i <= static_cast<unsigned int>(maxc1);
-            i++)
+        for (uint64_t iSection = 0; iSection < nSections; iSection++)
         {
-            this->Faces[i - 1].c1 = static_cast<int>(c1[i - minc1]) - 1;
-            if (this->Faces[i - 1].c1 >= 0)
+            uint64_t minc1, maxc1;
+
+            dset = H5Dopen(group, std::to_string(iSection + 1).c_str(), H5P_DEFAULT);
+            if (dset < 0)
             {
-                this->Cells[this->Faces[i - 1].c1].faces.push_back(i - 1);
+                throw std::runtime_error("Unable to open HDF dataset (GetFaces c1 iSection).");
+            }
+            attr = H5Aopen(dset, "minId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c1 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &minc1));
+            CHECK_HDF(H5Aclose(attr));
+            attr = H5Aopen(dset, "maxId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c1 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &maxc1));
+            CHECK_HDF(H5Aclose(attr));
+
+            std::vector<uint32_t> c1(maxc1 - minc1 + 1);
+            CHECK_HDF(H5Dread(dset, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, c1.data()));
+            CHECK_HDF(H5Dclose(dset));
+
+            for (unsigned int i = static_cast<unsigned int>(minc1); i <= static_cast<unsigned int>(maxc1);
+                i++)
+            {
+                this->Faces[i - 1].c1 = static_cast<int>(c1[i - minc1]) - 1;
+                if (this->Faces[i - 1].c1 >= 0)
+                {
+                    this->Cells[this->Faces[i - 1].c1].faces.push_back(i - 1);
+                }
             }
         }
-    }
 
-    CHECK_HDF(H5Gclose(group));
+        CHECK_HDF(H5Gclose(group));
+    }
+    else if (this->FileType == "msh")
+    {
+        group = H5Gopen(this->HDFImpl->FluentCaseFile, "/meshes/1/faces/c1", H5P_DEFAULT);
+        if (group < 0)
+        {
+            throw std::runtime_error("Unable to open HDF group (GetFaces c1).");
+        }
+        attr = H5Aopen(group, "nSections", H5P_DEFAULT);
+        if (attr < 0)
+        {
+            throw std::runtime_error("Unable to open HDF attribute (GetFaces c1).");
+        }
+        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &nSections));
+        CHECK_HDF(H5Aclose(attr));
+        for (uint64_t iSection = 0; iSection < nSections; iSection++)
+        {
+            uint64_t minc0, maxc0;
+
+            dset = H5Dopen(group, std::to_string(iSection + 1).c_str(), H5P_DEFAULT);
+            if (dset < 0)
+            {
+                throw std::runtime_error("Unable to open HDF dataset (GetFaces c0 iSection).");
+            }
+            attr = H5Aopen(dset, "minId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c0 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &minc0));
+            CHECK_HDF(H5Aclose(attr));
+            attr = H5Aopen(dset, "maxId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c0 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &maxc0));
+            CHECK_HDF(H5Aclose(attr));
+
+            std::vector<uint32_t> c0(maxc0 - minc0 + 1);
+            CHECK_HDF(H5Dread(dset, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, c0.data()));
+            CHECK_HDF(H5Dclose(dset));
+
+            for (unsigned int i = static_cast<unsigned int>(minc0); i <= static_cast<unsigned int>(maxc0);
+                i++)
+            {
+                this->Faces[i - 1].c0 = static_cast<int>(c0[i - minc0]) - 1;
+                if (this->Faces[i - 1].c0 >= 0)
+                {
+                    this->Cells[this->Faces[i - 1].c0].faces.push_back(i - 1);
+                }
+            }
+        }
+        CHECK_HDF(H5Gclose(group));
+
+        group = H5Gopen(this->HDFImpl->FluentCaseFile, "/meshes/1/faces/c0", H5P_DEFAULT);
+        if (group < 0)
+        {
+            throw std::runtime_error("Unable to open HDF group (GetFaces c0).");
+        }
+        attr = H5Aopen(group, "nSections", H5P_DEFAULT);
+        if (attr < 0)
+        {
+            throw std::runtime_error("Unable to open HDF attribute (GetFaces c0).");
+        }
+        CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &nSections));
+        CHECK_HDF(H5Aclose(attr));
+        for (std::size_t i = 0; i < this->Faces.size(); i++)
+        {
+            this->Faces[i].c1 = -1;
+        }
+        for (uint64_t iSection = 0; iSection < nSections; iSection++)
+        {
+            uint64_t minc1, maxc1;
+
+            dset = H5Dopen(group, std::to_string(iSection + 1).c_str(), H5P_DEFAULT);
+            if (dset < 0)
+            {
+                throw std::runtime_error("Unable to open HDF dataset (GetFaces c1 iSection).");
+            }
+            attr = H5Aopen(dset, "minId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c1 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &minc1));
+            CHECK_HDF(H5Aclose(attr));
+            attr = H5Aopen(dset, "maxId", H5P_DEFAULT);
+            if (attr < 0)
+            {
+                throw std::runtime_error("Unable to open HDF attribute (GetFaces c1 iSection).");
+            }
+            CHECK_HDF(H5Aread(attr, H5T_NATIVE_UINT64, &maxc1));
+            CHECK_HDF(H5Aclose(attr));
+
+            std::vector<uint32_t> c1(maxc1 - minc1 + 1);
+            CHECK_HDF(H5Dread(dset, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, c1.data()));
+            CHECK_HDF(H5Dclose(dset));
+
+            for (unsigned int i = static_cast<unsigned int>(minc1); i <= static_cast<unsigned int>(maxc1);
+                i++)
+            {
+                this->Faces[i - 1].c1 = static_cast<int>(c1[i - minc1]) - 1;
+                if (this->Faces[i - 1].c1 >= 0)
+                {
+                    this->Cells[this->Faces[i - 1].c1].faces.push_back(i - 1);
+                }
+            }
+        }
+
+        CHECK_HDF(H5Gclose(group));
+    }
 }
 
 //------------------------------------------------------------------------------
