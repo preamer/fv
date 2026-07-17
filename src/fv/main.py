@@ -447,7 +447,7 @@ def main() -> None:
             except Exception as e:
                 print(e)
         else:
-            from rich import print as rprint
+            from .utils import print_colored_dict
             kwargs = {
                 'solver': args.solver,
                 'mat': args.mat,
@@ -460,7 +460,7 @@ def main() -> None:
                 'iter': args.iter
             }
             output = read_case(args.file_path, **kwargs)
-            rprint(output)
+            print_colored_dict(output)
 
             if args.save:
                 import json

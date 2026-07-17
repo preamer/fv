@@ -63,3 +63,63 @@ CELL_TYPES = {
     6: "Wedge",
     7: "Polyhedron",
 }
+
+
+def print_colored_dict(data) -> None:
+    """Print nested data in 4-space JSON format.
+
+    Keys (including colon) : cycle through 6 hued colours per nesting level.
+    String values          : bright white  — no hue, never clashes with any key colour.
+    Numbers / bool / null  : white-grey    — no hue, never clashes with any key colour.
+    """
+    # 6 hued colours used exclusively for keys
+    LEVEL_COLORS = [
+        "\033[36m",  # cyan
+        "\033[32m",  # green
+        "\033[33m",  # yellow
+        "\033[35m",  # magenta
+        "\033[34m",  # blue
+        "\033[31m",  # red
+    ]
+    STR_COLOR = "\033[97m"  # bright white — string values
+    PRIM_COLOR = "\033[37m"  # white-grey   — numbers / booleans / null
+    RESET = "\033[0m"
+
+    import re
+    import json
+
+    # Three capture groups: key (with quotes) | colon + whitespace | value (with optional trailing comma)
+    KV_RE = re.compile(r'^("(?:[^"\\]|\\.)*")(:\s*)(.+)$')
+
+    text = json.dumps(data, indent=4, ensure_ascii=False, default=str)
+
+    for line in text.splitlines():
+        content = line.lstrip(" ")
+        level = (len(line) - len(content)) // 4
+        indent = " " * (len(line) - len(content))
+        lc = LEVEL_COLORS[level % len(LEVEL_COLORS)]
+
+        m = KV_RE.match(content)
+        if m:
+            key, colon, rest = m.group(1), m.group(2), m.group(3)
+            # Strip trailing comma only for type detection; print the original `rest`
+            bare = rest.rstrip(",").strip()
+
+            if bare in ("{", "["):
+                # Value is an opening bracket — keep structural chars in the level colour
+                print(f"{indent}{lc}{key}{colon}{rest}{RESET}")
+            elif bare.startswith('"'):
+                print(f"{indent}{lc}{key}{colon}{RESET}{STR_COLOR}{rest}{RESET}")
+            else:
+                # Number / boolean / null
+                print(f"{indent}{lc}{key}{colon}{RESET}{PRIM_COLOR}{rest}{RESET}")
+        else:
+            # Structural line ({ } [ ]) or bare array element
+            bare = content.rstrip(",").strip()
+            if bare.startswith('"'):
+                print(f"{indent}{STR_COLOR}{content}{RESET}")
+            elif bare in ("{", "}", "[", "]"):
+                print(f"{indent}{lc}{content}{RESET}")
+            else:
+                # Number / boolean / null inside an array
+                print(f"{indent}{PRIM_COLOR}{content}{RESET}")
