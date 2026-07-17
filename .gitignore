@@ -22,3 +22,6 @@ include/
 lib/
 
 .vscode/
+
+*.pyd
+*.so
