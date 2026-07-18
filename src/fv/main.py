@@ -118,6 +118,28 @@ def read_case(file_path: str, **kwargs) -> dict[str]:
         else:
             data['solver']['gravity'] = "false"
 
+        operating_conditions = [
+            'operating-pressure',
+            'pressure-reference/x', 'pressure-reference/y', 'pressure-reference/z',
+            'operating-temperature',
+        ]
+        use_operating_density = re.search(
+            r'\(use-operating-density\?\s+([^)\s]+)\)',
+            general_info
+        ).group(1)
+        if use_operating_density == '#t':
+            operating_conditions.append('operating-density')
+        for condition in operating_conditions:
+            sel = re.search(
+                fr'\({condition}-sel\s+"([^"]+)"\)',
+                general_info
+            ).group(1)
+            expr = re.search(
+                fr'\({condition}-expr\s+"([^"]+)"\)',
+                general_info
+            ).group(1)
+            data['solver'][condition] = f'{sel}/{expr}'
+
     if kwargs['mat']:
         import sexpdata
 
