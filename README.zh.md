@@ -26,13 +26,7 @@ cd fv
 pip install .
 ```
 
-如果自动检测失败，请手动设置 `HDF5_DIR` 后重新安装：
-
-| 平台 | 命令 |
-|---|---|
-| Linux   | `export HDF5_DIR=/usr/lib/x86_64-linux-gnu/hdf5/serial` |
-| macOS   | `export HDF5_DIR=$(brew --prefix hdf5)` |
-| Windows | `set HDF5_DIR=C:\vcpkg\installed\x64-windows` |
+如果自动检测失败，请手动设置 `HDF5_DIR` 后重新安装。
 
 ---
 

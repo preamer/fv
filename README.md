@@ -26,13 +26,7 @@ cd fv
 pip install .
 ```
 
-If auto-detection fails, set `HDF5_DIR` explicitly before installing:
-
-| Platform | Command |
-|---|---|
-| Linux   | `export HDF5_DIR=/usr/lib/x86_64-linux-gnu/hdf5/serial` |
-| macOS   | `export HDF5_DIR=$(brew --prefix hdf5)` |
-| Windows | `set HDF5_DIR=C:\vcpkg\installed\x64-windows` |
+If auto-detection fails, set `HDF5_DIR` explicitly before installing.
 
 ---
 
