@@ -10,8 +10,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "preamer", email = "1524477126@qq.com" }]
 keywords = ["fluent", "cfd", "ansys", "hdf5", "mesh"]
+license-expression = "BSD-3-Clause"
 classifiers = [
-    "License :: OSI Approved :: BSD 3-Clause License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
