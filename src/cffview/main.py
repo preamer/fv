@@ -370,11 +370,6 @@ def main() -> None:
         action="store_true",
         help="show the version of the .h5 file"
     )
-    parser.add_argument(
-        "-t", "--to",
-        type=str,
-        help="version to change to, e.g. 25.2"
-    )
 
     parser.add_argument(
         "--solver",
