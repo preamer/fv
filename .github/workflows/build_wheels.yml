@@ -28,7 +28,7 @@ jobs:
         run: chmod +x tools/build_hdf5_linux.sh tools/build_hdf5_macos.sh
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v4.1.0
 
       - uses: actions/upload-artifact@v4
         with:

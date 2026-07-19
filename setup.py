@@ -54,7 +54,7 @@ def find_hdf5() -> tuple[list, list, list, list, list]:
 
     if sys.platform == "win32":
         define_macros.append(("H5_BUILT_AS_DYNAMIC_LIB", None))
-        libraries = ["hdf5"]
+        libraries = ["libhdf5"]
     else:
         for ldir in library_dirs:
             extra_link_args.append(f"-Wl,-rpath,{ldir}")

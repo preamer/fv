@@ -40,7 +40,8 @@ where = ["src"]
 
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-* cp314-*"
-skip = ["*-win32", "*-musllinux*"]
+skip = ["*-win32", "*-musllinux*", "*-manylinux_i686"]
+
 [tool.cibuildwheel.linux]
 before-all = "bash tools/build_hdf5_linux.sh"
 environment = { HDF5_DIR = "/opt/hdf5", PIP_ONLY_BINARY = ":all:" }
