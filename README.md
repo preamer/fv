@@ -1,6 +1,6 @@
 [中文](README.zh.md)
 
-# fv
+# cffview
 
 A command-line tool for inspecting Ansys Fluent `.cas.h5` / `.msh.h5` files **without opening Fluent**.
 
@@ -13,16 +13,16 @@ A command-line tool for inspecting Ansys Fluent `.cas.h5` / `.msh.h5` files **wi
 ## Installation
 
 ```bash
-pip install fv
+pip install cffview
 ```
 
 ### Build from source
 
-HDF5 development headers and libraries are required. The build script detects them automatically in the following order: `HDF5_DIR` environment variable → local `include/lib` → `pkg-config` → conda → Homebrew (macOS) → common system paths.
+HDF5 development headers and libraries are required.
 
 ```bash
-git clone https://github.com/preamer/fv.git
-cd fv
+git clone https://github.com/preamer/cffview.git
+cd cffview
 pip install .
 ```
 
@@ -33,7 +33,7 @@ If auto-detection fails, set `HDF5_DIR` explicitly before installing.
 ## Usage
 
 ```
-fv <file> [options]
+cffview <file> [options]
 ```
 
 ### Options
@@ -60,20 +60,20 @@ Multiple flags can be combined freely. Case settings flags (`--solver`, `--mat`,
 
 ```bash
 # Show solver configuration and boundary conditions
-fv case.cas.h5 --solver --bd
+cffview case.cas.h5 --solver --bd
 
 # Show all settings and save to JSON
-fv case.cas.h5 --solver --mat --bd --ne --disc --rd --iter --save
+cffview case.cas.h5 --solver --mat --bd --ne --disc --rd --iter --save
 
 # Visualise the mesh (.cas.h5 and .msh.h5 both supported)
-fv case.cas.h5 --showmesh
-fv mesh.msh.h5 --showmesh
+cffview case.cas.h5 --showmesh
+cffview mesh.msh.h5 --showmesh
 
 # Check the Fluent version embedded in the file
-fv case.cas.h5 --version
+cffview case.cas.h5 --version
 
 # Extract raw Scheme strings for manual inspection
-fv case.cas.h5 --extract
+cffview case.cas.h5 --extract
 ```
 
 ---

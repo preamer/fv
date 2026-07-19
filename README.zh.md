@@ -1,6 +1,6 @@
 [English](README.md)
 
-# fv
+# cffview
 
 一个用于检查 Ansys Fluent `.cas.h5` / `.msh.h5` 文件的命令行工具，**无需打开 Fluent**。
 
@@ -13,16 +13,16 @@
 ## 安装
 
 ```bash
-pip install fv
+pip install cffview
 ```
 
 ### 从源码编译
 
-需要 HDF5 开发头文件和库。构建脚本会按以下顺序自动检测：`HDF5_DIR` 环境变量 → 本地 `include/lib` → `pkg-config` → conda → Homebrew（macOS）→ 常见系统路径。
+需要 HDF5 开发头文件和库。
 
 ```bash
-git clone https://github.com/preamer/fv.git
-cd fv
+git clone https://github.com/preamer/cffview.git
+cd cffview
 pip install .
 ```
 
@@ -33,7 +33,7 @@ pip install .
 ## 用法
 
 ```
-fv <文件> [选项]
+cffview <文件> [选项]
 ```
 
 ### 选项
@@ -60,20 +60,20 @@ fv <文件> [选项]
 
 ```bash
 # 查看求解器配置和边界条件
-fv case.cas.h5 --solver --bd
+cffview case.cas.h5 --solver --bd
 
 # 查看所有设置并保存为 JSON
-fv case.cas.h5 --solver --mat --bd --ne --disc --rd --iter --save
+cffview case.cas.h5 --solver --mat --bd --ne --disc --rd --iter --save
 
 # 可视化网格（.cas.h5 和 .msh.h5 均支持）
-fv case.cas.h5 --showmesh
-fv mesh.msh.h5 --showmesh
+cffview case.cas.h5 --showmesh
+cffview mesh.msh.h5 --showmesh
 
 # 查看文件中存储的 Fluent 版本
-fv case.cas.h5 --version
+cffview case.cas.h5 --version
 
 # 导出原始 Scheme 字符串以便手动查看
-fv case.cas.h5 --extract
+cffview case.cas.h5 --extract
 ```
 
 ---
