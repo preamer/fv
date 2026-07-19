@@ -53,3 +53,4 @@ before-all = "bash tools/build_hdf5_macos.sh"
 [tool.cibuildwheel.windows]
 before-all = "powershell tools/build_hdf5_windows.ps1"
 environment = { HDF5_DIR = "C:/Users/runneradmin/hdf5" }
+repair-wheel-command = "delvewheel repair --add-path C:\\Users\\runneradmin\\hdf5\\bin -w {dest_dir} {wheel}"
