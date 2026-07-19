@@ -28,7 +28,7 @@ dependencies = [
     "h5py>=3.16.0",
     "pyvista>=0.48.4",
     "sexpdata>=1.0.2",
-    "tqdm>=4.68.3",
+    "tqdm>=4.69.0",
 ]
 
 [project.scripts]
