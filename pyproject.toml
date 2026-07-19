@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=83.0.0", "wheel", "pybind11>=3.0.4", "numpy>=2.4.6"]
+requires = ["setuptools>=83.0.0", "wheel", "pybind11>=3.0.4", "numpy>=2.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -40,7 +40,7 @@ where = ["src"]
 
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-* cp314-*"
-skip = "*-musllinux*"
+skip = ["*-win32", "*-musllinux*"]
 
 [tool.cibuildwheel.linux]
 before-all = "bash tools/build_hdf5_linux.sh"
@@ -48,7 +48,7 @@ environment = { HDF5_DIR = "/opt/hdf5", PIP_ONLY_BINARY = ":all:" }
 repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.macos]
-environment = { HDF5_DIR = "/opt/hdf5", MACOSX_DEPLOYMENT_TARGET = "11.0" }
+environment = { HDF5_DIR = "/tmp/hdf5", MACOSX_DEPLOYMENT_TARGET = "11.0", DYLD_LIBRARY_PATH = "/tmp/hdf5/lib" }
 before-all = "bash tools/build_hdf5_macos.sh"
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
