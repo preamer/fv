@@ -6,7 +6,6 @@ A command-line tool for inspecting Ansys Fluent `.cas.h5` / `.msh.h5` files **wi
 
 - Read solver settings, materials, boundary conditions, discretisation schemes, and more directly from the HDF5 file.
 - Visualise the mesh with [PyVista](https://pyvista.org).
-- Mesh reader based on a modified version of VTK's [`vtkFLUENTCFFReader`](https://github.com/Kitware/VTK/tree/master/IO/FLUENTCFF), with the VTK dependency removed. Supports all VTK cell types including polyhedra, for both `.cas.h5` and `.msh.h5`.
 
 ---
 
@@ -18,15 +17,11 @@ pip install cffview
 
 ### Build from source
 
-HDF5 development headers and libraries are required.
-
 ```bash
 git clone https://github.com/preamer/cffview.git
 cd cffview
 pip install .
 ```
-
-If auto-detection fails, set `HDF5_DIR` explicitly before installing.
 
 ---
 
@@ -84,9 +79,7 @@ cffview case.cas.h5 --extract
 |---|---|---|
 | Case settings (`--solver`, `--mat`, `--bd`, …) | ✅ | — |
 | Mesh visualisation (3D) | ✅ | ✅ |
-| Mesh visualisation (2D) | ✅ | ⚠️ partial |
-
-> **Note:** 2D `.msh.h5` face connectivity (C0/C1) parsing is not yet fully implemented.
+| Mesh visualisation (2D) | ✅ | ✅ |
 
 ---
 

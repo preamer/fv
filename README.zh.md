@@ -6,7 +6,6 @@
 
 - 直接从 HDF5 文件中读取求解器设置、材料、边界条件、离散格式等信息。
 - 使用 [PyVista](https://pyvista.org) 可视化网格。
-- 网格读取器基于 VTK 的 [`vtkFLUENTCFFReader`](https://github.com/Kitware/VTK/tree/master/IO/FLUENTCFF) 修改实现，移除了 VTK 依赖。支持所有 VTK 单元类型（包括多面体单元），兼容 `.cas.h5` 和 `.msh.h5`。
 
 ---
 
@@ -18,15 +17,11 @@ pip install cffview
 
 ### 从源码编译
 
-需要 HDF5 开发头文件和库。
-
 ```bash
 git clone https://github.com/preamer/cffview.git
 cd cffview
 pip install .
 ```
-
-如果自动检测失败，请手动设置 `HDF5_DIR` 后重新安装。
 
 ---
 
@@ -84,9 +79,7 @@ cffview case.cas.h5 --extract
 |---|---|---|
 | 算例设置（`--solver`、`--mat`、`--bd` 等） | ✅ | — |
 | 网格可视化（3D） | ✅ | ✅ |
-| 网格可视化（2D） | ✅ | ⚠️ 部分支持 |
-
-> **注：** 2D `.msh.h5` 文件的面连通性（C0/C1）解析尚未完全实现。
+| 网格可视化（2D） | ✅ | ✅ |
 
 ---
 
