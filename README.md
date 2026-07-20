@@ -39,7 +39,7 @@ cffview <file> [options]
 
 | Option | Description |
 |---|---|
-| `-v`, `--version` | Print the Fluent version stored in the file |
+| `-v`, `--version` | Print the Fluent version of file |
 | `--extract` | Dump raw Scheme settings to `general.scm` and `boundary.scm` |
 | `--showmesh` | Visualise the mesh interactively with PyVista |
 | `--solver` | Solver type, time, dimension, precision, turbulence model, energy, radiation, gravity |
@@ -58,17 +58,17 @@ Multiple flags can be combined freely. Case settings flags (`--solver`, `--mat`,
 ### Examples
 
 ```bash
+# Show all settings and save to JSON
+cffview case.cas.h5 --save
+
 # Show solver configuration and boundary conditions
 cffview case.cas.h5 --solver --bd
 
-# Show all settings and save to JSON
-cffview case.cas.h5 --solver --mat --bd --ne --disc --rd --iter --save
-
-# Visualise the mesh (.cas.h5 and .msh.h5 both supported)
+# Visualise the mesh
 cffview case.cas.h5 --showmesh
 cffview mesh.msh.h5 --showmesh
 
-# Check the Fluent version embedded in the file
+# Check the Fluent version of file
 cffview case.cas.h5 --version
 
 # Extract raw Scheme strings for manual inspection

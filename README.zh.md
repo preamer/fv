@@ -35,7 +35,7 @@ cffview <文件> [选项]
 
 | 选项 | 说明 |
 |---|---|
-| `-v`, `--version` | 打印文件中存储的 Fluent 版本号 |
+| `-v`, `--version` | 打印文件对应的 Fluent 版本号 |
 | `--extract` | 将原始 Scheme 设置导出到 `general.scm` 和 `boundary.scm` |
 | `--showmesh` | 使用 PyVista 交互式显示网格 |
 | `--solver` | 求解器类型、时间类型、维度、精度、湍流模型、能量方程、辐射模型、重力 |
@@ -54,17 +54,17 @@ cffview <文件> [选项]
 ### 示例
 
 ```bash
-# 查看求解器配置和边界条件
+# 查看所有设置并保存为 JSON
+cffview case.cas.h5 --save
+
+# 查看求解器设置和边界条件
 cffview case.cas.h5 --solver --bd
 
-# 查看所有设置并保存为 JSON
-cffview case.cas.h5 --solver --mat --bd --ne --disc --rd --iter --save
-
-# 可视化网格（.cas.h5 和 .msh.h5 均支持）
+# 可视化网格
 cffview case.cas.h5 --showmesh
 cffview mesh.msh.h5 --showmesh
 
-# 查看文件中存储的 Fluent 版本
+# 查看文件对应的 Fluent 版本
 cffview case.cas.h5 --version
 
 # 导出原始 Scheme 字符串以便手动查看
