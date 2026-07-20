@@ -404,9 +404,20 @@ def show_mesh(file_path: str) -> None:
             offsets = np.cumsum(nnodes) - nnodes
             pv_faces = np.insert(nodes, offsets, nnodes)
 
-        mesh = pv.PolyData(pv_points, pv_faces)
+        mesh = pv.PolyData(
+            pv_points,
+            faces=pv_faces if dimension == 3 else None,
+            lines=pv_faces if dimension == 2 else None
+        )
         plotter = pv.Plotter()
-        plotter.add_mesh(mesh, show_edges=True, color='cyan', line_width=2, smooth_shading=True, split_sharp_edges=True)
+        plotter.add_mesh(
+            mesh,
+            show_edges=True,
+            color='lightblue',
+            line_width=2,
+            smooth_shading=True,
+            split_sharp_edges=True,
+        )
         plotter.add_axes()
         plotter.show()
 
