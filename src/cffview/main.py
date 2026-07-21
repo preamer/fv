@@ -365,7 +365,7 @@ def show_mesh(file_path: str) -> None:
     import pyvista as pv
     if file_path.endswith('cas.h5'):
         pv.plot(
-            pv.read(file_path, progress_bar=True),
+            pv.read(file_path),
             show_edges=True,
             show_axes=True,
             smooth_shading=True,
