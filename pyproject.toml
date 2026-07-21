@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cffview"
-version = "0.2.2"
+version = "0.2.3"
 description = "A Python CLI tool to inspect Ansys Fluent .cas.h5/.msh.h5 files without opening Fluent"
 readme = "README.md"
 requires-python = ">=3.10"
