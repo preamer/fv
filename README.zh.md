@@ -27,6 +27,9 @@ pip install .
 
 ## 用法
 
+> [!IMPORTANT]
+> 只在 Ansys Fluent 25R2 下进行过测试！
+
 ```
 cffview <文件> [选项]
 ```
@@ -72,6 +75,10 @@ cffview case.cas.h5 --version
 # 导出原始 Scheme 字符串以便手动查看
 cffview case.cas.h5 --extract
 ```
+
+### 演示
+
+[demo.webm](https://github.com/user-attachments/assets/9c5bad50-83f4-4da4-8f8d-ed8b88537472)
 
 ---
 
